@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Evidence - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-file-upload me-2"></i>Upload Evidence
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.officer_id.label(class="form-label") }}
+                                    {{ form.officer_id(class="form-select") }}
+                                    {% if form.officer_id.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.officer_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.incident_id.label(class="form-label") }}
+                                    {{ form.incident_id(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.evidence_type.label(class="form-label") }}
+                                    {{ form.evidence_type(class="form-select") }}
+                                    {% if form.evidence_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.evidence_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.source.label(class="form-label") }}
+                                    {{ form.source(class="form-control", placeholder="e.g., Community Upload, News Media, etc.") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.file.label(class="form-label") }}
+                            {{ form.file(class="form-control") }}
+                            <div class="form-text">Maximum file size: 16MB. Supported formats: Images, Videos, Documents, Audio files.</div>
+                            {% if form.file.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.file.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="Describe what this evidence shows...") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.uploader_name.label(class="form-label") }}
+                                    {{ form.uploader_name(class="form-control", placeholder="Your name (optional)") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.uploader_email.label(class="form-label") }}
+                                    {{ form.uploader_email(class="form-control", placeholder="your@email.com (optional)") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Privacy Notice:</strong> Your personal information will not be shared publicly. 
+                            It may be used for verification purposes only.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

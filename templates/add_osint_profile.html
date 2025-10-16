@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Add OSINT Profile - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Add OSINT Profile
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Open Source Intelligence:</strong> Track officers' social media profiles 
+                        and online presence for concerning content or behavior patterns.
+                    </div>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.officer_id.label(class="form-label") }}
+                                    {{ form.officer_id(class="form-select") }}
+                                    {% if form.officer_id.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.officer_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.platform.label(class="form-label") }}
+                                    {{ form.platform(class="form-select") }}
+                                    {% if form.platform.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.platform.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.username.label(class="form-label") }}
+                                    {{ form.username(class="form-control", placeholder="@username or handle") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.full_name.label(class="form-label") }}
+                                    {{ form.full_name(class="form-control", placeholder="Full name as it appears on profile") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.profile_url.label(class="form-label") }}
+                            {{ form.profile_url(class="form-control", placeholder="https://...") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.location.label(class="form-label") }}
+                                    {{ form.location(class="form-control", placeholder="City, State or general location") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.confidence_score.label(class="form-label") }}
+                                    {{ form.confidence_score(class="form-control", placeholder="0.0-1.0") }}
+                                    <div class="form-text">How confident are you this is the correct person? (0 = not sure, 1 = certain)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.bio.label(class="form-label") }}
+                            {{ form.bio(class="form-control", rows="3", placeholder="Bio, description, or any identifying information from the profile...") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control", rows="3", placeholder="Additional notes, observations, or concerning content found...") }}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Privacy Notice:</strong> Only document publicly available information. 
+                            Do not engage in harassment or doxxing. Focus on concerning behavior patterns 
+                            that may indicate problematic attitudes or actions.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-info") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}{{ officer.first_name }} {{ officer.last_name }} - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Officer Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            {% if officer.photo_url %}
+                            <img src="{{ officer.photo_url }}" class="img-fluid rounded mb-3" alt="Officer photo" style="max-height: 200px;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px;">
+                                <i class="fas fa-user fa-4x text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h1 class="mb-3">
+                                {{ officer.first_name }} {{ officer.last_name }}
+                                {% if officer.middle_name %}{{ officer.middle_name }}{% endif %}
+                            </h1>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Badge Number:</strong> {{ officer.badge_number }}</p>
+                                    {% if officer.current_department %}
+                                    <p><strong>Current Department:</strong> {{ officer.current_department.name }}</p>
+                                    {% endif %}
+                                    {% if officer.rank %}
+                                    <p><strong>Rank:</strong> {{ officer.rank }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-{{ 'success' if officer.status == 'active' else 'danger' if officer.status == 'terminated' else 'warning' }} fs-6">
+                                            {{ officer.status.title() }}
+                                        </span>
+                                    </p>
+                                    {% if officer.hire_date %}
+                                    <p><strong>Hire Date:</strong> {{ officer.hire_date.strftime('%Y-%m-%d') }}</p>
+                                    {% endif %}
+                                    {% if officer.date_of_birth %}
+                                    <p><strong>Date of Birth:</strong> {{ officer.date_of_birth.strftime('%Y-%m-%d') }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taxpayer Cost Summary -->
+    {% set total_cost, costs = calculate_total_costs(officer.id) %}
+    {% if total_cost > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">
+                    <i class="fas fa-dollar-sign me-2"></i>Taxpayer Cost Summary
+                </h4>
+                <p class="mb-0">
+                    <strong>Total Cost to Taxpayers:</strong> ${{ "%.2f"|format(total_cost) }}
+                    <span class="badge bg-danger ms-2">{{ costs|length }} cost(s) documented</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="officerTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Incidents ({{ incidents|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="evidence-tab" data-bs-toggle="tab" data-bs-target="#evidence" type="button" role="tab">
+                        <i class="fas fa-file-alt me-1"></i>Evidence ({{ evidence|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button" role="tab">
+                        <i class="fas fa-dollar-sign me-1"></i>Taxpayer Costs ({{ costs|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="social-tab" data-bs-toggle="tab" data-bs-target="#social" type="button" role="tab">
+                        <i class="fas fa-share-alt me-1"></i>Social Media ({{ social_media|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="osint-tab" data-bs-toggle="tab" data-bs-target="#osint" type="button" role="tab">
+                        <i class="fas fa-search me-1"></i>OSINT Profiles ({{ officer.osint_profiles|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                        <i class="fas fa-history me-1"></i>Department History ({{ department_history|length }})
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="officerTabsContent">
+        <!-- Incidents Tab -->
+        <div class="tab-pane fade show active" id="incidents" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Incidents</h3>
+                        <a href="{{ url_for('add_incident') }}?officer_id={{ officer.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Incident
+                        </a>
+                    </div>
+                    
+                    {% if incidents %}
+                        {% for incident in incidents %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>{{ incident.incident_type }}
+                                    </h5>
+                                    <small class="text-muted">{{ incident.incident_date.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <p class="card-text">{{ incident.description }}</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {% if incident.location %}
+                                        <p><strong>Location:</strong> {{ incident.location }}</p>
+                                        {% endif %}
+                                        {% if incident.outcome %}
+                                        <p><strong>Outcome:</strong> {{ incident.outcome }}</p>
+                                        {% endif %}
+                                        {% if incident.charges_filed %}
+                                        <p><strong>Charges Filed:</strong> <span class="badge bg-danger">Yes</span></p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if incident.conviction_date %}
+                                        <p><strong>Conviction Date:</strong> {{ incident.conviction_date.strftime('%Y-%m-%d') }}</p>
+                                        {% endif %}
+                                        {% if incident.settlement_amount %}
+                                        <p><strong>Settlement:</strong> ${{ "%.2f"|format(incident.settlement_amount) }}</p>
+                                        {% endif %}
+                                        {% if incident.case_number %}
+                                        <p><strong>Case Number:</strong> {{ incident.case_number }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if incident.source %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <strong>Source:</strong> {{ incident.source }}
+                                        {% if incident.source_url %}
+                                        <a href="{{ incident.source_url }}" target="_blank" class="ms-1">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No incidents documented for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Evidence Tab -->
+        <div class="tab-pane fade" id="evidence" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Evidence</h3>
+                        <a href="{{ url_for('add_evidence') }}?officer_id={{ officer.id }}" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i>Upload Evidence
+                        </a>
+                    </div>
+                    
+                    {% if evidence %}
+                        <div class="row">
+                            {% for item in evidence %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title">
+                                                <i class="fas fa-{{ 'image' if item.evidence_type == 'photo' else 'video' if item.evidence_type == 'video' else 'file-alt' if item.evidence_type == 'document' else 'microphone' }} me-1"></i>
+                                                {{ item.evidence_type.title() }}
+                                            </h6>
+                                            <small class="text-muted">{{ item.created_at.strftime('%Y-%m-%d') }}</small>
+                                        </div>
+                                        <p class="card-text">{{ item.description or 'No description provided' }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                {% if item.uploader_name %}{{ item.uploader_name }}{% endif %}
+                                            </small>
+                                            <a href="{{ url_for('download_evidence', evidence_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-download me-1"></i>Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No evidence uploaded for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Taxpayer Costs Tab -->
+        <div class="tab-pane fade" id="costs" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Taxpayer Costs</h3>
+                        <a href="{{ url_for('add_taxpayer_cost') }}?officer_id={{ officer.id }}" class="btn btn-warning">
+                            <i class="fas fa-plus me-1"></i>Add Cost
+                        </a>
+                    </div>
+                    
+                    {% if costs %}
+                        <div class="row">
+                            {% for cost in costs %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title text-danger">
+                                                <i class="fas fa-dollar-sign me-1"></i>{{ cost.cost_type.title() }}
+                                            </h6>
+                                            <span class="badge bg-danger fs-6">${{ "%.2f"|format(cost.amount) }}</span>
+                                        </div>
+                                        <p class="card-text">{{ cost.description }}</p>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                {% if cost.case_number %}
+                                                <p><strong>Case:</strong> {{ cost.case_number }}</p>
+                                                {% endif %}
+                                                {% if cost.date_occurred %}
+                                                <p><strong>Date:</strong> {{ cost.date_occurred.strftime('%Y-%m-%d') }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-6">
+                                                {% if cost.court_jurisdiction %}
+                                                <p><strong>Court:</strong> {{ cost.court_jurisdiction }}</p>
+                                                {% endif %}
+                                                {% if cost.source %}
+                                                <p><strong>Source:</strong> {{ cost.source }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                Added: {{ cost.created_at.strftime('%Y-%m-%d') }}
+                                            </small>
+                                            <a href="{{ url_for('dispute_record', table_name='taxpayer_costs', record_id=cost.id) }}" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Dispute
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No taxpayer costs documented for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Media Tab -->
+        <div class="tab-pane fade" id="social" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h3>Social Media Profiles</h3>
+                    
+                    {% if social_media %}
+                        {% for profile in social_media %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title">
+                                            <i class="fab fa-{{ profile.platform.lower() }} me-2"></i>{{ profile.platform.title() }}
+                                        </h6>
+                                        <p class="card-text mb-0">
+                                            <strong>Username:</strong> {{ profile.username }}
+                                        </p>
+                                        {% if profile.profile_url %}
+                                        <p class="card-text">
+                                            <a href="{{ profile.profile_url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-external-link-alt me-1"></i>View Profile
+                                            </a>
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-{{ 'success' if profile.is_active else 'secondary' }}">
+                                            {{ 'Active' if profile.is_active else 'Inactive' }}
+                                        </span>
+                                        {% if profile.last_checked %}
+                                        <br><small class="text-muted">Last checked: {{ profile.last_checked.strftime('%Y-%m-%d') }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No social media profiles tracked for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- OSINT Profiles Tab -->
+        <div class="tab-pane fade" id="osint" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>OSINT Profiles</h3>
+                        <a href="{{ url_for('add_osint_profile') }}?officer_id={{ officer.id }}" class="btn btn-info">
+                            <i class="fas fa-plus me-1"></i>Add OSINT Profile
+                        </a>
+                    </div>
+                    
+                    {% if officer.osint_profiles %}
+                        {% for profile in officer.osint_profiles %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title">
+                                        <i class="fab fa-{{ profile.platform.lower() }} me-2"></i>{{ profile.platform.title() }}
+                                    </h6>
+                                    <div class="text-end">
+                                        {% if profile.confidence_score %}
+                                        <span class="badge bg-{{ 'success' if profile.confidence_score > 0.8 else 'warning' if profile.confidence_score > 0.5 else 'danger' }}">
+                                            {{ "%.0f"|format(profile.confidence_score * 100) }}% Confidence
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if profile.username %}
+                                <p><strong>Username:</strong> {{ profile.username }}</p>
+                                {% endif %}
+                                {% if profile.full_name %}
+                                <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+                                {% endif %}
+                                {% if profile.bio %}
+                                <p><strong>Bio:</strong> {{ profile.bio }}</p>
+                                {% endif %}
+                                {% if profile.location %}
+                                <p><strong>Location:</strong> {{ profile.location }}</p>
+                                {% endif %}
+                                {% if profile.notes %}
+                                <p><strong>Notes:</strong> {{ profile.notes }}</p>
+                                {% endif %}
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        Added: {{ profile.created_at.strftime('%Y-%m-%d') }}
+                                    </small>
+                                    <a href="{{ url_for('dispute_record', table_name='osint_profiles', record_id=profile.id) }}" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Dispute
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No OSINT profiles tracked for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Department History Tab -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h3>Department History</h3>
+                    
+                    {% if department_history %}
+                        <div class="timeline">
+                            {% for history in department_history %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">{{ history.department.name }}</h6>
+                                            {% if history.rank %}
+                                            <p class="card-text mb-1"><strong>Rank:</strong> {{ history.rank }}</p>
+                                            {% endif %}
+                                            <p class="card-text mb-1">
+                                                <strong>Duration:</strong> 
+                                                {{ history.start_date.strftime('%Y-%m-%d') }}
+                                                {% if history.end_date %} to {{ history.end_date.strftime('%Y-%m-%d') }}{% else %} (Current){% endif %}
+                                            </p>
+                                            {% if history.reason_for_transfer %}
+                                            <p class="card-text"><strong>Transfer Reason:</strong> {{ history.reason_for_transfer }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ history.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No department history available for this officer.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('export_officer', officer_id=officer.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-download me-1"></i>Export Officer Data
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

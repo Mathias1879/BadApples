@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Dispute Record - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Dispute Record
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Dispute Process:</strong> If you believe information in this database is 
+                        incorrect, inappropriate, or violates privacy, you can submit a dispute. 
+                        All disputes are reviewed by moderators.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Record Information</h5>
+                        <p><strong>Type:</strong> {{ table_name.replace('_', ' ').title() }}</p>
+                        <p><strong>Record ID:</strong> {{ record_id }}</p>
+                    </div>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.dispute_type.label(class="form-label") }}
+                            {{ form.dispute_type(class="form-select") }}
+                            {% if form.dispute_type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.dispute_type.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4", placeholder="Please explain why you believe this information is incorrect or inappropriate...") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.disputer_name.label(class="form-label") }}
+                                    {{ form.disputer_name(class="form-control", placeholder="Your name (optional)") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.disputer_email.label(class="form-label") }}
+                                    {{ form.disputer_email(class="form-control", placeholder="your@email.com (optional)") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.disputer_phone.label(class="form-label") }}
+                                    {{ form.disputer_phone(class="form-control", placeholder="Phone (optional)") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.evidence_provided.label(class="form-label") }}
+                            {{ form.evidence_provided(class="form-control", rows="3", placeholder="Provide any evidence or documentation that supports your dispute...") }}
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            <strong>Privacy Protection:</strong> Your personal information will not be shared 
+                            publicly. It may be used for verification purposes only. All disputes are 
+                            reviewed by independent moderators.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-warning") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

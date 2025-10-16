@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="jumbotron bg-primary text-white p-5 rounded">
+                <h1 class="display-4">
+                    <i class="fas fa-shield-alt me-3"></i>Bad Apples Database
+                </h1>
+                <p class="lead">A community-driven database tracking law enforcement officers with histories of misconduct, violence, and abuse of power.</p>
+                <hr class="my-4">
+                <p>Help protect your community by documenting and sharing information about problematic officers who have been transferred rather than held accountable.</p>
+                <a class="btn btn-light btn-lg" href="{{ url_for('community_report') }}" role="button">
+                    <i class="fas fa-comment-dots me-2"></i>Submit a Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ total_officers }}</h3>
+                    <p class="card-text">Officers Tracked</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ total_incidents }}</h3>
+                    <p class="card-text">Incidents Documented</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ total_evidence }}</h3>
+                    <p class="card-text">Evidence Files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-heart fa-3x mb-3"></i>
+                    <h3 class="card-title">Community</h3>
+                    <p class="card-text">Powered</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h2>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Search Officers</h5>
+                    <p class="card-text">Find officers by name, badge number, or department.</p>
+                    <a href="{{ url_for('officers') }}" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Search
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-upload fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Upload Evidence</h5>
+                    <p class="card-text">Share photos, videos, documents, and other evidence.</p>
+                    <a href="{{ url_for('add_evidence') }}" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i>Upload
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Add Officer</h5>
+                    <p class="card-text">Add a new officer to the database.</p>
+                    <a href="{{ url_for('add_officer') }}" class="btn btn-info">
+                        <i class="fas fa-user-plus me-1"></i>Add
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-comment-dots fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Community Report</h5>
+                    <p class="card-text">Report incidents and share your experiences.</p>
+                    <a href="{{ url_for('community_report') }}" class="btn btn-warning">
+                        <i class="fas fa-comment-dots me-1"></i>Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Incidents -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-clock me-2"></i>Recent Incidents
+            </h2>
+            {% if recent_incidents %}
+                <div class="row">
+                    {% for incident in recent_incidents %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title text-danger mb-0">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>{{ incident.incident_type }}
+                                    </h6>
+                                    <small class="text-muted">{{ incident.incident_date.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <p class="card-text">{{ incident.description[:150] }}{% if incident.description|length > 150 %}...{% endif %}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ incident.officer.first_name }} {{ incident.officer.last_name }}
+                                        {% if incident.officer.badge_number %}({{ incident.officer.badge_number }}){% endif %}
+                                    </small>
+                                    <a href="{{ url_for('officer_detail', officer_id=incident.officer_id) }}" class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No recent incidents to display.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mission Statement -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <i class="fas fa-bullhorn me-2"></i>Our Mission
+                    </h3>
+                    <p class="card-text">
+                        The Bad Apples Database is a community-driven initiative to track law enforcement officers 
+                        who have histories of misconduct, excessive force, and abuse of power. Too often, these 
+                        "bad apples" are simply transferred to other departments rather than being held accountable 
+                        for their actions.
+                    </p>
+                    <p class="card-text">
+                        By documenting these patterns and making the information accessible to the public, we aim to:
+                    </p>
+                    <ul>
+                        <li>Hold problematic officers accountable for their actions</li>
+                        <li>Prevent the "blue wall of silence" from protecting bad actors</li>
+                        <li>Provide communities with the information they need to demand accountability</li>
+                        <li>Support efforts to remove officers who pose a threat to public safety</li>
+                    </ul>
+                    <p class="card-text">
+                        <strong>This database is for community safety and accountability purposes only.</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

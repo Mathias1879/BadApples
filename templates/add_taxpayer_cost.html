@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Add Taxpayer Cost - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Add Taxpayer Cost
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Track the financial impact:</strong> Document lawsuits, settlements, fines, 
+                        and other costs that officers have imposed on taxpayers.
+                    </div>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.officer_id.label(class="form-label") }}
+                                    {{ form.officer_id(class="form-select") }}
+                                    {% if form.officer_id.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.officer_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.cost_type.label(class="form-label") }}
+                                    {{ form.cost_type(class="form-select") }}
+                                    {% if form.cost_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.cost_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.amount.label(class="form-label") }}
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.amount(class="form-control", placeholder="0.00") }}
+                                    </div>
+                                    {% if form.amount.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.amount.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.case_number.label(class="form-label") }}
+                                    {{ form.case_number(class="form-control", placeholder="Case number or reference") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4", placeholder="Detailed description of the cost and circumstances...") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.court_jurisdiction.label(class="form-label") }}
+                                    {{ form.court_jurisdiction(class="form-control", placeholder="Court name and location") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.date_occurred.label(class="form-label") }}
+                                    {{ form.date_occurred(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.date_paid.label(class="form-label") }}
+                                    {{ form.date_paid(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.source.label(class="form-label") }}
+                                    {{ form.source(class="form-control", placeholder="e.g., Court Records, News Article, etc.") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.source_url.label(class="form-label") }}
+                            {{ form.source_url(class="form-control", placeholder="https://...") }}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-warning") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

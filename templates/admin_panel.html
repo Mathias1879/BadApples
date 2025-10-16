@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">
+                <i class="fas fa-cogs me-2"></i>Admin Panel
+            </h1>
+            <p class="text-muted">Manage content moderation, disputes, and system administration.</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ pending_incidents }}</h3>
+                    <p class="card-text">Pending Incidents</p>
+                    <a href="#" class="btn btn-light btn-sm">Review</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ pending_evidence }}</h3>
+                    <p class="card-text">Pending Evidence</p>
+                    <a href="#" class="btn btn-light btn-sm">Review</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ pending_reports }}</h3>
+                    <p class="card-text">Pending Reports</p>
+                    <a href="#" class="btn btn-light btn-sm">Review</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-gavel fa-3x mb-3"></i>
+                    <h3 class="card-title">{{ pending_disputes }}</h3>
+                    <p class="card-text">Pending Disputes</p>
+                    <a href="#" class="btn btn-light btn-sm">Review</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-3">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h3>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Add Officer</h5>
+                    <p class="card-text">Add a new officer to the database</p>
+                    <a href="{{ url_for('add_officer') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i>Add Officer
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Add Cost</h5>
+                    <p class="card-text">Record taxpayer costs</p>
+                    <a href="{{ url_for('add_taxpayer_cost') }}" class="btn btn-warning">
+                        <i class="fas fa-dollar-sign me-1"></i>Add Cost
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">OSINT Tools</h5>
+                    <p class="card-text">Add social media profiles</p>
+                    <a href="{{ url_for('add_osint_profile') }}" class="btn btn-info">
+                        <i class="fas fa-search me-1"></i>OSINT
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Analytics</h5>
+                    <p class="card-text">View system analytics</p>
+                    <a href="#" class="btn btn-success">
+                        <i class="fas fa-chart-bar me-1"></i>Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-3">
+                <i class="fas fa-history me-2"></i>Recent Activity
+            </h3>
+            <div class="card">
+                <div class="card-body">
+                    {% if recent_audit_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>Table</th>
+                                        <th>Record ID</th>
+                                        <th>IP Address</th>
+                                        <th>User</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in recent_audit_logs %}
+                                    <tr>
+                                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if log.action == 'create' else 'info' if log.action == 'update' else 'warning' if log.action == 'view' else 'danger' }}">
+                                                {{ log.action.title() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ log.table_name }}</td>
+                                        <td>{{ log.record_id }}</td>
+                                        <td>{{ log.ip_address }}</td>
+                                        <td>{{ log.user.username if log.user else 'Anonymous' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No recent activity to display.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>System Administration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="exportAuditLogs()">
+                                <i class="fas fa-download me-1"></i>Export Audit Logs
+                            </button>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <button class="btn btn-outline-warning w-100" onclick="clearOldLogs()">
+                                <i class="fas fa-trash me-1"></i>Clear Old Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportAuditLogs() {
+    // Export audit logs functionality
+    alert('Audit logs export functionality would be implemented here');
+}
+
+function clearOldLogs() {
+    if (confirm('Are you sure you want to clear logs older than 1 year? This action cannot be undone.')) {
+        // Clear old logs functionality
+        alert('Old logs clear functionality would be implemented here');
+    }
+}
+</script>
+{% endblock %}

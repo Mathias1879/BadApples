@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Add Incident - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Add New Incident
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.officer_id.label(class="form-label") }}
+                                    {{ form.officer_id(class="form-select") }}
+                                    {% if form.officer_id.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.officer_id.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.incident_date.label(class="form-label") }}
+                                    {{ form.incident_date(class="form-control") }}
+                                    {% if form.incident_date.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.incident_date.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.incident_type.label(class="form-label") }}
+                                    {{ form.incident_type(class="form-control", placeholder="e.g., Excessive Force, Misconduct, etc.") }}
+                                    {% if form.incident_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.incident_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.location.label(class="form-label") }}
+                                    {{ form.location(class="form-control", placeholder="City, State or specific address") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4", placeholder="Detailed description of the incident...") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.outcome.label(class="form-label") }}
+                                    {{ form.outcome(class="form-control", placeholder="e.g., Conviction, Settlement, Pending, etc.") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.charges_filed.label(class="form-check-label") }}
+                                    {{ form.charges_filed(class="form-check-input") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.conviction_date.label(class="form-label") }}
+                                    {{ form.conviction_date(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.settlement_amount.label(class="form-label") }}
+                                    {{ form.settlement_amount(class="form-control", placeholder="0.00") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.case_number.label(class="form-label") }}
+                                    {{ form.case_number(class="form-control", placeholder="Court case number") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.court_jurisdiction.label(class="form-label") }}
+                                    {{ form.court_jurisdiction(class="form-control", placeholder="Court name and location") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.sentence.label(class="form-label") }}
+                            {{ form.sentence(class="form-control", rows="2", placeholder="Details of any sentence or disciplinary action...") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.source.label(class="form-label") }}
+                                    {{ form.source(class="form-control", placeholder="e.g., News Article, Court Record, etc.") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.source_url.label(class="form-label") }}
+                                    {{ form.source_url(class="form-control", placeholder="https://...") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

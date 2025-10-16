@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Community Report - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-comment-dots me-2"></i>Community Report
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your voice matters!</strong> Community reports help us track patterns of misconduct 
+                        and hold officers accountable. All information is kept confidential and used for 
+                        documentation purposes only.
+                    </div>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.incident_id.label(class="form-label") }}
+                                    {{ form.incident_id(class="form-select") }}
+                                    <div class="form-text">Select if this report relates to an existing incident</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.report_type.label(class="form-label") }}
+                                    {{ form.report_type(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.reporter_name.label(class="form-label") }}
+                                    {{ form.reporter_name(class="form-control", placeholder="Your name (optional)") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.reporter_email.label(class="form-label") }}
+                                    {{ form.reporter_email(class="form-control", placeholder="your@email.com (optional)") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.reporter_phone.label(class="form-label") }}
+                                    {{ form.reporter_phone(class="form-control", placeholder="Phone number (optional)") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.incident_date.label(class="form-label") }}
+                                    {{ form.incident_date(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.location.label(class="form-label") }}
+                                    {{ form.location(class="form-control", placeholder="City, State or specific address") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="6", placeholder="Please provide a detailed description of what happened. Include as many specific details as possible: date, time, location, names, badge numbers, what was said, what actions were taken, etc.") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.contact_ok(class="form-check-input") }}
+                                {{ form.contact_ok.label(class="form-check-label") }}
+                                <div class="form-text">Check this if you're willing to be contacted for follow-up questions (optional)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Important:</strong> If you are in immediate danger, please call 911 or your local emergency services. 
+                            This form is for documentation purposes and is not monitored for emergency situations.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-warning") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
