@@ -4,29 +4,73 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, DateField, SelectField, FileField, BooleanField, SubmitField, FloatField, IntegerField
 from wtforms.validators import DataRequired, Email, Optional, NumberRange
 from werkzeug.utils import secure_filename
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_mail import Mail, Message
+from dotenv import load_dotenv
 import os
 from datetime import datetime
 import json
 import requests
 from bs4 import BeautifulSoup
 import re
+import secrets
+import csv
+from io import StringIO
 
 from models import (db, Officer, Department, Incident, Evidence, SocialMediaProfile, 
                    CommunityReport, User, OfficerDepartmentHistory, TaxpayerCost, 
-                   OSINTProfile, AuditLog, ContentModeration, Dispute)
+                   OSINTProfile, AuditLog, ContentModeration, Dispute, Vehicle)
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///badapples.db'
+
+# Configuration from environment variables
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///badapples.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Initialize database
+# Email configuration
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@badapples.org')
+
+# OSINT API Keys (for future implementation)
+app.config['TWITTER_API_KEY'] = os.getenv('TWITTER_API_KEY')
+app.config['TWITTER_API_SECRET'] = os.getenv('TWITTER_API_SECRET')
+app.config['FACEBOOK_API_KEY'] = os.getenv('FACEBOOK_API_KEY')
+
+# Initialize extensions
 db.init_app(app)
+mail = Mail(app)
+
+# Rate limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Create upload directory
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Security headers
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;"
+    return response
 
 # Utility functions
 def log_audit(table_name, record_id, action, field_name=None, old_value=None, new_value=None, user_id=None):
@@ -55,8 +99,7 @@ def get_client_ip():
     return request.environ.get('REMOTE_ADDR', 'unknown')
 
 def search_social_media(name, department=None):
-    """Basic OSINT search for social media profiles"""
-    # This is a simplified example - in production, you'd use proper OSINT tools
+    """Enhanced OSINT search for social media profiles"""
     results = []
     
     # Search patterns
@@ -64,15 +107,216 @@ def search_social_media(name, department=None):
     if department:
         search_terms.append(f"{name} {department}")
     
-    # This would integrate with actual OSINT tools
-    # For now, return mock data
+    # Twitter/X API integration (if configured)
+    if app.config.get('TWITTER_API_KEY'):
+        try:
+            # This is where you'd integrate with Twitter API
+            # For now, this is a placeholder for future implementation
+            twitter_results = search_twitter(name, department)
+            results.extend(twitter_results)
+        except Exception as e:
+            print(f"Twitter search error: {e}")
+    
+    # Facebook API integration (if configured)
+    if app.config.get('FACEBOOK_API_KEY'):
+        try:
+            # This is where you'd integrate with Facebook API
+            # For now, this is a placeholder for future implementation
+            facebook_results = search_facebook(name, department)
+            results.extend(facebook_results)
+        except Exception as e:
+            print(f"Facebook search error: {e}")
+    
+    # Google Search fallback (public information only)
+    try:
+        google_results = google_search_public_info(name, department)
+        results.extend(google_results)
+    except Exception as e:
+        print(f"Google search error: {e}")
+    
     return results
+
+def search_twitter(name, department=None):
+    """Search Twitter/X for profiles (requires API key)"""
+    # Placeholder for Twitter API integration
+    # In production, use tweepy or similar library
+    return []
+
+def search_facebook(name, department=None):
+    """Search Facebook for profiles (requires API key)"""
+    # Placeholder for Facebook API integration
+    # In production, use facebook-sdk or similar library
+    return []
+
+def google_search_public_info(name, department=None):
+    """Search Google for public information"""
+    # This uses basic web scraping for publicly available information
+    # In production, use Google Custom Search API
+    results = []
+    
+    try:
+        search_query = f"{name}"
+        if department:
+            search_query += f" {department}"
+        search_query += " police officer"
+        
+        # This is a basic example - in production use proper APIs
+        # For now, return empty to avoid scraping issues
+        
+    except Exception as e:
+        print(f"Google search error: {e}")
+    
+    return results
+
+@app.route('/api/osint_scan/<int:officer_id>', methods=['POST'])
+def api_osint_scan(officer_id):
+    """Automated OSINT scan for an officer"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    officer = Officer.query.get_or_404(officer_id)
+    department_name = officer.current_department.name if officer.current_department else None
+    
+    # Perform OSINT search
+    results = search_social_media(
+        f"{officer.first_name} {officer.last_name}",
+        department_name
+    )
+    
+    # Save results to database
+    saved_count = 0
+    for result in results:
+        # Check if profile already exists
+        existing = OSINTProfile.query.filter_by(
+            officer_id=officer_id,
+            platform=result.get('platform'),
+            username=result.get('username')
+        ).first()
+        
+        if not existing:
+            profile = OSINTProfile(
+                officer_id=officer_id,
+                platform=result.get('platform'),
+                username=result.get('username'),
+                profile_url=result.get('url'),
+                full_name=result.get('name'),
+                confidence_score=result.get('confidence', 0.5),
+                notes=f"Automatically discovered via OSINT scan"
+            )
+            db.session.add(profile)
+            saved_count += 1
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'officer_id': officer_id,
+        'results_found': len(results),
+        'profiles_saved': saved_count,
+        'message': f'OSINT scan complete. Found {len(results)} results, saved {saved_count} new profiles.'
+    })
 
 def calculate_total_costs(officer_id):
     """Calculate total taxpayer costs for an officer"""
     costs = TaxpayerCost.query.filter_by(officer_id=officer_id).all()
     total = sum(cost.amount for cost in costs)
     return total, costs
+
+def send_email_notification(subject, recipients, body_text, body_html=None):
+    """Send email notification"""
+    try:
+        if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+            # Email not configured, skip silently
+            return False
+            
+        msg = Message(
+            subject=subject,
+            recipients=recipients if isinstance(recipients, list) else [recipients],
+            body=body_text,
+            html=body_html or body_text
+        )
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+def notify_admins_new_report(report_type, report_id):
+    """Notify admins of new community report"""
+    admin_users = User.query.filter(User.role.in_(['admin', 'moderator'])).all()
+    if not admin_users:
+        return
+    
+    recipients = [user.email for user in admin_users if user.email]
+    if not recipients:
+        return
+    
+    subject = f"New {report_type.title()} Report Submitted"
+    body = f"""
+A new {report_type} report has been submitted to the Bad Apples Database.
+
+Report ID: {report_id}
+Type: {report_type}
+
+Please review this report in the admin panel:
+{url_for('admin_panel', _external=True)}
+
+---
+This is an automated notification from the Bad Apples Database.
+    """
+    
+    send_email_notification(subject, recipients, body)
+
+def notify_admins_new_dispute(dispute_id, table_name, record_id):
+    """Notify admins of new dispute"""
+    admin_users = User.query.filter(User.role.in_(['admin', 'moderator'])).all()
+    if not admin_users:
+        return
+    
+    recipients = [user.email for user in admin_users if user.email]
+    if not recipients:
+        return
+    
+    subject = f"New Dispute Submitted - {table_name} #{record_id}"
+    body = f"""
+A new dispute has been submitted to the Bad Apples Database.
+
+Dispute ID: {dispute_id}
+Record Type: {table_name}
+Record ID: {record_id}
+
+Please review this dispute in the admin panel:
+{url_for('admin_panel', _external=True)}
+
+---
+This is an automated notification from the Bad Apples Database.
+    """
+    
+    send_email_notification(subject, recipients, body)
+
+def notify_dispute_resolution(dispute, resolution_status):
+    """Notify disputer of resolution"""
+    if not dispute.disputer_email:
+        return
+    
+    subject = f"Dispute Resolution - {dispute.table_name} #{dispute.record_id}"
+    body = f"""
+Your dispute has been reviewed and {resolution_status}.
+
+Dispute ID: {dispute.id}
+Record Type: {dispute.table_name}
+Record ID: {dispute.record_id}
+Status: {resolution_status.upper()}
+
+{f"Resolution: {dispute.resolution}" if dispute.resolution else ""}
+
+Thank you for helping us maintain the accuracy of the Bad Apples Database.
+
+---
+This is an automated notification from the Bad Apples Database.
+    """
+    
+    send_email_notification(subject, [dispute.disputer_email], body)
 
 # Forms
 class OfficerForm(FlaskForm):
@@ -199,6 +443,37 @@ class AdminLoginForm(FlaskForm):
     password = StringField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
+class AdminRegisterForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = StringField('Password', validators=[DataRequired()])
+    confirm_password = StringField('Confirm Password', validators=[DataRequired()])
+    role = SelectField('Role', choices=[('moderator', 'Moderator'), ('admin', 'Administrator')], validators=[DataRequired()])
+    submit = SubmitField('Register Admin User')
+
+class VehicleForm(FlaskForm):
+    officer_id = SelectField('Officer', coerce=int, validators=[DataRequired()])
+    vehicle_type = SelectField('Vehicle Type', choices=[
+        ('patrol', 'Patrol Vehicle'),
+        ('personal', 'Personal Vehicle'),
+        ('unmarked', 'Unmarked'),
+        ('undercover', 'Undercover'),
+        ('other', 'Other')
+    ], validators=[DataRequired()])
+    make = StringField('Make', validators=[DataRequired()])
+    model = StringField('Model', validators=[DataRequired()])
+    year = IntegerField('Year', validators=[Optional(), NumberRange(min=1900, max=2030)])
+    color = StringField('Color', validators=[DataRequired()])
+    license_plate = StringField('License Plate')
+    state = StringField('State (2 letters)', validators=[Optional()])
+    vin = StringField('VIN (17 characters)', validators=[Optional()])
+    is_unmarked = BooleanField('Is Unmarked Vehicle')
+    description = TextAreaField('Description/Notes')
+    last_seen_location = StringField('Last Seen Location')
+    last_seen_date = DateField('Last Seen Date', validators=[Optional()])
+    source = StringField('Source of Information')
+    submit = SubmitField('Add Vehicle')
+
 # Routes
 @app.route('/')
 def index():
@@ -236,13 +511,15 @@ def officer_detail(officer_id):
     evidence = officer.evidence.order_by(Evidence.created_at.desc()).all()
     social_media = officer.social_media.all()
     department_history = officer.department_history.order_by(OfficerDepartmentHistory.start_date.desc()).all()
+    vehicles = officer.vehicles.filter_by(is_active=True).all()
     
     return render_template('officer_detail.html', 
                          officer=officer, 
                          incidents=incidents,
                          evidence=evidence,
                          social_media=social_media,
-                         department_history=department_history)
+                         department_history=department_history,
+                         vehicles=vehicles)
 
 @app.route('/add_officer', methods=['GET', 'POST'])
 def add_officer():
@@ -330,6 +607,7 @@ def add_evidence():
     return render_template('add_evidence.html', form=form)
 
 @app.route('/community_report', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
 def community_report():
     form = CommunityReportForm()
     form.incident_id.choices = [(0, 'Not related to specific incident')] + [(i.id, f"{i.incident_type} - {i.incident_date}") for i in Incident.query.all()]
@@ -348,7 +626,11 @@ def community_report():
         )
         db.session.add(report)
         db.session.commit()
-        flash('Community report submitted successfully!', 'success')
+        
+        # Send email notification to admins
+        notify_admins_new_report('community_report', report.id)
+        
+        flash('Community report submitted successfully! Administrators have been notified.', 'success')
         return redirect(url_for('index'))
     
     return render_template('community_report.html', form=form)
@@ -374,6 +656,7 @@ def add_department():
     return render_template('add_department.html', form=form)
 
 @app.route('/search')
+@limiter.limit("30 per minute")
 def search():
     query = request.args.get('q', '')
     if not query:
@@ -445,6 +728,122 @@ def export_officer(officer_id):
     }
     
     return jsonify(export_data)
+
+@app.route('/export_officers_csv')
+def export_officers_csv():
+    """Export all officers to CSV format"""
+    officers = Officer.query.all()
+    
+    # Create CSV in memory
+    si = StringIO()
+    writer = csv.writer(si)
+    
+    # Write header
+    writer.writerow(['Badge Number', 'First Name', 'Last Name', 'Department', 'Rank', 'Status', 'Hire Date', 'Incident Count'])
+    
+    # Write data
+    for officer in officers:
+        writer.writerow([
+            officer.badge_number,
+            officer.first_name,
+            officer.last_name,
+            officer.current_department.name if officer.current_department else '',
+            officer.rank or '',
+            officer.status,
+            officer.hire_date.strftime('%Y-%m-%d') if officer.hire_date else '',
+            officer.incidents.count()
+        ])
+    
+    # Create response
+    output = si.getvalue()
+    si.close()
+    
+    return send_file(
+        StringIO(output),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'officers_export_{datetime.now().strftime("%Y%m%d")}.csv'
+    )
+
+@app.route('/export_incidents_csv')
+def export_incidents_csv():
+    """Export all incidents to CSV format"""
+    incidents = Incident.query.all()
+    
+    # Create CSV in memory
+    si = StringIO()
+    writer = csv.writer(si)
+    
+    # Write header
+    writer.writerow(['Date', 'Type', 'Officer Name', 'Badge Number', 'Department', 'Location', 'Description', 'Outcome', 'Charges Filed', 'Settlement Amount', 'Source'])
+    
+    # Write data
+    for incident in incidents:
+        writer.writerow([
+            incident.incident_date.strftime('%Y-%m-%d'),
+            incident.incident_type,
+            f"{incident.officer.first_name} {incident.officer.last_name}",
+            incident.officer.badge_number,
+            incident.officer.current_department.name if incident.officer.current_department else '',
+            incident.location or '',
+            incident.description,
+            incident.outcome or '',
+            'Yes' if incident.charges_filed else 'No',
+            incident.settlement_amount or '',
+            incident.source or ''
+        ])
+    
+    # Create response
+    output = si.getvalue()
+    si.close()
+    
+    return send_file(
+        StringIO(output),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'incidents_export_{datetime.now().strftime("%Y%m%d")}.csv'
+    )
+
+@app.route('/export_vehicles_csv')
+def export_vehicles_csv():
+    """Export all vehicles to CSV format"""
+    vehicles = Vehicle.query.filter_by(is_active=True).all()
+    
+    # Create CSV in memory
+    si = StringIO()
+    writer = csv.writer(si)
+    
+    # Write header
+    writer.writerow(['Officer Name', 'Badge Number', 'Vehicle Type', 'Make', 'Model', 'Year', 'Color', 'License Plate', 'State', 'VIN', 'Is Unmarked', 'Last Seen Location', 'Last Seen Date'])
+    
+    # Write data
+    for vehicle in vehicles:
+        writer.writerow([
+            f"{vehicle.officer.first_name} {vehicle.officer.last_name}",
+            vehicle.officer.badge_number,
+            vehicle.vehicle_type,
+            vehicle.make,
+            vehicle.model,
+            vehicle.year or '',
+            vehicle.color,
+            vehicle.license_plate or '',
+            vehicle.state or '',
+            vehicle.vin or '',
+            'Yes' if vehicle.is_unmarked else 'No',
+            vehicle.last_seen_location or '',
+            vehicle.last_seen_date.strftime('%Y-%m-%d') if vehicle.last_seen_date else ''
+        ])
+    
+    # Create response
+    output = si.getvalue()
+    si.close()
+    
+    return send_file(
+        StringIO(output),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'vehicles_export_{datetime.now().strftime("%Y%m%d")}.csv'
+    )
 
 # New routes for advanced features
 
@@ -529,7 +928,10 @@ def dispute_record(table_name, record_id):
         # Log the audit trail
         log_audit(table_name, record_id, 'dispute', new_value=f"Disputed: {form.dispute_type.data}")
         
-        flash('Dispute submitted successfully! It will be reviewed by moderators.', 'success')
+        # Send email notification to admins
+        notify_admins_new_dispute(dispute.id, table_name, record_id)
+        
+        flash('Dispute submitted successfully! It will be reviewed by moderators and you will be notified of the resolution.', 'success')
         return redirect(url_for('index'))
     
     return render_template('dispute_record.html', form=form, table_name=table_name, record_id=record_id)
@@ -557,6 +959,7 @@ def admin_panel():
                          recent_audit_logs=recent_audit_logs)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def admin_login():
     form = AdminLoginForm()
     
@@ -578,6 +981,59 @@ def admin_logout():
     session.clear()
     flash('Logged out successfully.', 'success')
     return redirect(url_for('index'))
+
+@app.route('/admin/register', methods=['GET', 'POST'])
+def admin_register():
+    # Only allow admins to register new admin/moderator users
+    if not session.get('is_admin'):
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('admin_login'))
+    
+    # Check if current user is admin (not just moderator)
+    current_user = User.query.get(session.get('user_id'))
+    if not current_user or current_user.role != 'admin':
+        flash('Access denied. Only administrators can register new users.', 'error')
+        return redirect(url_for('admin_panel'))
+    
+    form = AdminRegisterForm()
+    
+    if form.validate_on_submit():
+        # Check if passwords match
+        if form.password.data != form.confirm_password.data:
+            flash('Passwords do not match.', 'error')
+            return render_template('admin_register.html', form=form)
+        
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=form.username.data).first()
+        if existing_user:
+            flash('Username already exists.', 'error')
+            return render_template('admin_register.html', form=form)
+        
+        # Check if email already exists
+        existing_email = User.query.filter_by(email=form.email.data).first()
+        if existing_email:
+            flash('Email already exists.', 'error')
+            return render_template('admin_register.html', form=form)
+        
+        # Create new user
+        new_user = User(
+            username=form.username.data,
+            email=form.email.data,
+            role=form.role.data,
+            is_active=True
+        )
+        new_user.set_password(form.password.data)
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Log the action
+        log_audit('users', new_user.id, 'create', user_id=session.get('user_id'))
+        
+        flash(f'{form.role.data.title()} user {form.username.data} created successfully!', 'success')
+        return redirect(url_for('admin_panel'))
+    
+    return render_template('admin_register.html', form=form)
 
 @app.route('/admin/moderate/<string:table_name>/<int:record_id>')
 def moderate_record(table_name, record_id):
@@ -655,6 +1111,343 @@ def osint_search():
     # Basic OSINT search (in production, integrate with real OSINT tools)
     results = search_social_media(query)
     return jsonify(results)
+
+# API Endpoints
+@app.route('/api/live_search')
+@limiter.limit("60 per minute")
+def api_live_search():
+    """Real-time search API for AJAX requests"""
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 3:
+        return jsonify({'officers': [], 'incidents': [], 'vehicles': []})
+    
+    # Search officers
+    officers = Officer.query.filter(
+        (Officer.first_name.contains(query)) |
+        (Officer.last_name.contains(query)) |
+        (Officer.badge_number.contains(query))
+    ).limit(5).all()
+    
+    # Search incidents
+    incidents = Incident.query.filter(
+        (Incident.incident_type.contains(query)) |
+        (Incident.description.contains(query))
+    ).limit(5).all()
+    
+    # Search vehicles
+    vehicles = Vehicle.query.filter(
+        (Vehicle.make.contains(query)) |
+        (Vehicle.model.contains(query)) |
+        (Vehicle.license_plate.contains(query)) |
+        (Vehicle.color.contains(query))
+    ).filter_by(is_active=True).limit(5).all()
+    
+    return jsonify({
+        'officers': [{
+            'id': o.id,
+            'first_name': o.first_name,
+            'last_name': o.last_name,
+            'badge_number': o.badge_number
+        } for o in officers],
+        'incidents': [{
+            'id': i.id,
+            'incident_type': i.incident_type,
+            'officer_id': i.officer_id,
+            'officer_name': f"{i.officer.first_name} {i.officer.last_name}"
+        } for i in incidents],
+        'vehicles': [{
+            'id': v.id,
+            'make': v.make,
+            'model': v.model,
+            'license_plate': v.license_plate,
+            'officer_id': v.officer_id
+        } for v in vehicles]
+    })
+
+@app.route('/api/officers', methods=['GET'])
+def api_get_officers():
+    """REST API: Get all officers"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    officers = Officer.query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'data': [{
+            'id': o.id,
+            'badge_number': o.badge_number,
+            'first_name': o.first_name,
+            'last_name': o.last_name,
+            'department': o.current_department.name if o.current_department else None,
+            'status': o.status,
+            'incident_count': o.incidents.count()
+        } for o in officers.items],
+        'page': officers.page,
+        'per_page': officers.per_page,
+        'total': officers.total,
+        'pages': officers.pages
+    })
+
+@app.route('/api/officer/<int:officer_id>', methods=['GET'])
+def api_get_officer(officer_id):
+    """REST API: Get single officer"""
+    officer = Officer.query.get_or_404(officer_id)
+    
+    return jsonify({
+        'id': officer.id,
+        'badge_number': officer.badge_number,
+        'first_name': officer.first_name,
+        'last_name': officer.last_name,
+        'middle_name': officer.middle_name,
+        'department': officer.current_department.name if officer.current_department else None,
+        'rank': officer.rank,
+        'status': officer.status,
+        'hire_date': officer.hire_date.isoformat() if officer.hire_date else None,
+        'incidents': [{
+            'id': i.id,
+            'date': i.incident_date.isoformat(),
+            'type': i.incident_type,
+            'description': i.description
+        } for i in officer.incidents.all()]
+    })
+
+@app.route('/api/incidents', methods=['GET'])
+def api_get_incidents():
+    """REST API: Get all incidents"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    incidents = Incident.query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'data': [{
+            'id': i.id,
+            'officer_id': i.officer_id,
+            'officer_name': f"{i.officer.first_name} {i.officer.last_name}",
+            'date': i.incident_date.isoformat(),
+            'type': i.incident_type,
+            'location': i.location,
+            'description': i.description[:200]
+        } for i in incidents.items],
+        'page': incidents.page,
+        'per_page': incidents.per_page,
+        'total': incidents.total,
+        'pages': incidents.pages
+    })
+
+@app.route('/admin/batch_approve', methods=['POST'])
+def batch_approve():
+    """Batch approve multiple records"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.get_json()
+    table_name = data.get('table_name')
+    record_ids = data.get('record_ids', [])
+    
+    if not table_name or not record_ids:
+        return jsonify({'error': 'Missing parameters'}), 400
+    
+    approved_count = 0
+    
+    for record_id in record_ids:
+        if table_name == 'incidents':
+            record = Incident.query.get(record_id)
+            if record:
+                record.verified = True
+                approved_count += 1
+        elif table_name == 'evidence':
+            record = Evidence.query.get(record_id)
+            if record:
+                record.verified = True
+                approved_count += 1
+        elif table_name == 'community_reports':
+            record = CommunityReport.query.get(record_id)
+            if record:
+                record.verified = True
+                approved_count += 1
+    
+    db.session.commit()
+    
+    # Log the batch action
+    log_audit(table_name, 0, 'batch_approve', 
+              new_value=f"Approved {approved_count} records", 
+              user_id=session.get('user_id'))
+    
+    return jsonify({
+        'success': True,
+        'approved': approved_count,
+        'message': f'Successfully approved {approved_count} records'
+    })
+
+@app.route('/admin/batch_reject', methods=['POST'])
+def batch_reject():
+    """Batch reject multiple records"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.get_json()
+    table_name = data.get('table_name')
+    record_ids = data.get('record_ids', [])
+    reason = data.get('reason', 'rejected')
+    
+    if not table_name or not record_ids:
+        return jsonify({'error': 'Missing parameters'}), 400
+    
+    rejected_count = 0
+    
+    for record_id in record_ids:
+        moderation = ContentModeration(
+            table_name=table_name,
+            record_id=record_id,
+            status='rejected',
+            moderator_id=session.get('user_id'),
+            reason_code=reason
+        )
+        db.session.add(moderation)
+        rejected_count += 1
+    
+    db.session.commit()
+    
+    # Log the batch action
+    log_audit(table_name, 0, 'batch_reject', 
+              new_value=f"Rejected {rejected_count} records", 
+              user_id=session.get('user_id'))
+    
+    return jsonify({
+        'success': True,
+        'rejected': rejected_count,
+        'message': f'Successfully rejected {rejected_count} records'
+    })
+
+@app.route('/add_vehicle', methods=['GET', 'POST'])
+def add_vehicle():
+    form = VehicleForm()
+    form.officer_id.choices = [(o.id, f"{o.first_name} {o.last_name} ({o.badge_number})") for o in Officer.query.all()]
+    
+    if form.validate_on_submit():
+        vehicle = Vehicle(
+            officer_id=form.officer_id.data,
+            vehicle_type=form.vehicle_type.data,
+            make=form.make.data,
+            model=form.model.data,
+            year=form.year.data,
+            color=form.color.data,
+            license_plate=form.license_plate.data,
+            state=form.state.data,
+            vin=form.vin.data,
+            is_unmarked=form.is_unmarked.data,
+            description=form.description.data,
+            last_seen_location=form.last_seen_location.data,
+            last_seen_date=form.last_seen_date.data,
+            source=form.source.data
+        )
+        db.session.add(vehicle)
+        db.session.commit()
+        
+        # Log the audit trail
+        log_audit('vehicles', vehicle.id, 'create', user_id=session.get('user_id'))
+        
+        flash('Vehicle added successfully!', 'success')
+        return redirect(url_for('officer_detail', officer_id=vehicle.officer_id))
+    
+    return render_template('add_vehicle.html', form=form)
+
+@app.route('/vehicles')
+def vehicles():
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    
+    query = Vehicle.query.filter_by(is_active=True)
+    if search:
+        query = query.join(Officer).filter(
+            (Vehicle.make.contains(search)) |
+            (Vehicle.model.contains(search)) |
+            (Vehicle.license_plate.contains(search)) |
+            (Vehicle.color.contains(search)) |
+            (Officer.first_name.contains(search)) |
+            (Officer.last_name.contains(search))
+        )
+    
+    vehicles = query.paginate(page=page, per_page=20, error_out=False)
+    return render_template('vehicles.html', vehicles=vehicles, search=search)
+
+@app.route('/analytics')
+def analytics():
+    """Analytics dashboard with statistics and trends"""
+    # Basic statistics
+    total_officers = Officer.query.count()
+    total_incidents = Incident.query.count()
+    total_evidence = Evidence.query.count()
+    total_costs = db.session.query(db.func.sum(TaxpayerCost.amount)).scalar() or 0
+    total_vehicles = Vehicle.query.filter_by(is_active=True).count()
+    unmarked_vehicles = Vehicle.query.filter_by(is_active=True, is_unmarked=True).count()
+    
+    # Status breakdown
+    active_officers = Officer.query.filter_by(status='active').count()
+    terminated_officers = Officer.query.filter_by(status='terminated').count()
+    suspended_officers = Officer.query.filter_by(status='suspended').count()
+    retired_officers = Officer.query.filter_by(status='retired').count()
+    
+    # Incident types
+    incident_types = db.session.query(
+        Incident.incident_type,
+        db.func.count(Incident.id)
+    ).group_by(Incident.incident_type).order_by(db.func.count(Incident.id).desc()).limit(10).all()
+    
+    # Top officers by incident count
+    top_officers = db.session.query(
+        Officer,
+        db.func.count(Incident.id).label('incident_count')
+    ).join(Incident).group_by(Officer.id).order_by(db.func.count(Incident.id).desc()).limit(10).all()
+    
+    # Top officers by cost
+    top_cost_officers = db.session.query(
+        Officer,
+        db.func.sum(TaxpayerCost.amount).label('total_cost')
+    ).join(TaxpayerCost).group_by(Officer.id).order_by(db.func.sum(TaxpayerCost.amount).desc()).limit(10).all()
+    
+    # Departments with most incidents
+    department_stats = db.session.query(
+        Department,
+        db.func.count(Incident.id).label('incident_count')
+    ).join(Officer).join(Incident).group_by(Department.id).order_by(db.func.count(Incident.id).desc()).limit(10).all()
+    
+    # Monthly incident trends (last 12 months)
+    from dateutil.relativedelta import relativedelta
+    twelve_months_ago = datetime.now() - relativedelta(months=12)
+    monthly_incidents = db.session.query(
+        db.func.strftime('%Y-%m', Incident.incident_date).label('month'),
+        db.func.count(Incident.id).label('count')
+    ).filter(Incident.incident_date >= twelve_months_ago).group_by('month').order_by('month').all()
+    
+    # Pending moderation counts
+    pending_incidents = Incident.query.filter_by(verified=False).count()
+    pending_evidence = Evidence.query.filter_by(verified=False).count()
+    pending_reports = CommunityReport.query.filter_by(verified=False).count()
+    pending_disputes = Dispute.query.filter_by(status='pending').count()
+    
+    return render_template('analytics.html',
+                         total_officers=total_officers,
+                         total_incidents=total_incidents,
+                         total_evidence=total_evidence,
+                         total_costs=total_costs,
+                         total_vehicles=total_vehicles,
+                         unmarked_vehicles=unmarked_vehicles,
+                         active_officers=active_officers,
+                         terminated_officers=terminated_officers,
+                         suspended_officers=suspended_officers,
+                         retired_officers=retired_officers,
+                         incident_types=incident_types,
+                         top_officers=top_officers,
+                         top_cost_officers=top_cost_officers,
+                         department_stats=department_stats,
+                         monthly_incidents=monthly_incidents,
+                         pending_incidents=pending_incidents,
+                         pending_evidence=pending_evidence,
+                         pending_reports=pending_reports,
+                         pending_disputes=pending_disputes)
 
 if __name__ == '__main__':
     with app.app_context():

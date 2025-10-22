@@ -65,16 +65,103 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Search functionality enhancement
+    // Real-time search functionality with AJAX
     const searchInput = document.querySelector('input[name="q"]');
+    let searchTimeout;
+    
     if (searchInput) {
+        // Create search results dropdown
+        const searchResultsDiv = document.createElement('div');
+        searchResultsDiv.className = 'search-results-dropdown position-absolute bg-white border rounded shadow-lg d-none';
+        searchResultsDiv.style.cssText = 'top: 100%; left: 0; right: 0; max-height: 400px; overflow-y: auto; z-index: 1000;';
+        searchInput.parentElement.style.position = 'relative';
+        searchInput.parentElement.appendChild(searchResultsDiv);
+        
         searchInput.addEventListener('input', function() {
             const query = this.value.trim();
-            if (query.length > 2) {
-                // Could implement live search here
-                console.log('Searching for:', query);
+            
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Hide results if query too short
+            if (query.length < 3) {
+                searchResultsDiv.classList.add('d-none');
+                return;
+            }
+            
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                performLiveSearch(query, searchResultsDiv);
+            }, 300);
+        });
+        
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResultsDiv.contains(e.target)) {
+                searchResultsDiv.classList.add('d-none');
             }
         });
+    }
+    
+    async function performLiveSearch(query, resultsDiv) {
+        try {
+            const response = await fetch(`/api/live_search?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            if (data.officers.length === 0 && data.incidents.length === 0 && data.vehicles.length === 0) {
+                resultsDiv.innerHTML = '<div class="p-3 text-muted"><i class="fas fa-search me-2"></i>No results found</div>';
+            } else {
+                let html = '<div class="p-2">';
+                
+                // Officers
+                if (data.officers.length > 0) {
+                    html += '<div class="mb-2"><strong class="text-muted">Officers</strong></div>';
+                    data.officers.forEach(officer => {
+                        html += `
+                            <a href="/officer/${officer.id}" class="list-group-item list-group-item-action border-0">
+                                <i class="fas fa-user me-2"></i>${officer.first_name} ${officer.last_name} 
+                                <span class="badge bg-secondary">${officer.badge_number}</span>
+                            </a>
+                        `;
+                    });
+                }
+                
+                // Incidents
+                if (data.incidents.length > 0) {
+                    html += '<div class="mb-2 mt-2"><strong class="text-muted">Incidents</strong></div>';
+                    data.incidents.forEach(incident => {
+                        html += `
+                            <a href="/officer/${incident.officer_id}" class="list-group-item list-group-item-action border-0">
+                                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>${incident.incident_type}
+                                <small class="text-muted d-block">${incident.officer_name}</small>
+                            </a>
+                        `;
+                    });
+                }
+                
+                // Vehicles
+                if (data.vehicles.length > 0) {
+                    html += '<div class="mb-2 mt-2"><strong class="text-muted">Vehicles</strong></div>';
+                    data.vehicles.forEach(vehicle => {
+                        html += `
+                            <a href="/officer/${vehicle.officer_id}" class="list-group-item list-group-item-action border-0">
+                                <i class="fas fa-car me-2"></i>${vehicle.make} ${vehicle.model} 
+                                <span class="badge bg-info">${vehicle.license_plate || 'No Plate'}</span>
+                            </a>
+                        `;
+                    });
+                }
+                
+                html += '</div>';
+                resultsDiv.innerHTML = html;
+            }
+            
+            resultsDiv.classList.remove('d-none');
+        } catch (error) {
+            console.error('Search error:', error);
+            resultsDiv.innerHTML = '<div class="p-3 text-danger"><i class="fas fa-exclamation-circle me-2"></i>Error performing search</div>';
+            resultsDiv.classList.remove('d-none');
+        }
     }
 
     // Officer card hover effects

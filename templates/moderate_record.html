@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Moderate Record - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-gavel me-2"></i>Moderate {{ table_name|title }} Record</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Review this record and decide whether to approve or reject it.
+                    </div>
+
+                    <!-- Display record details based on table type -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Record Details</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if table_name == 'incidents' %}
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Incident Type:</td>
+                                        <td>{{ record.incident_type }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Date:</td>
+                                        <td>{{ record.incident_date.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Officer:</td>
+                                        <td>
+                                            <a href="{{ url_for('officer_detail', officer_id=record.officer_id) }}">
+                                                {{ record.officer.first_name }} {{ record.officer.last_name }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Location:</td>
+                                        <td>{{ record.location or 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Description:</td>
+                                        <td>{{ record.description }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Outcome:</td>
+                                        <td>{{ record.outcome or 'N/A' }}</td>
+                                    </tr>
+                                    {% if record.source %}
+                                    <tr>
+                                        <td class="fw-bold">Source:</td>
+                                        <td>
+                                            {{ record.source }}
+                                            {% if record.source_url %}
+                                                <a href="{{ record.source_url }}" target="_blank" class="ms-2">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="fw-bold">Verified:</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if record.verified else 'warning' }}">
+                                                {{ 'Yes' if record.verified else 'No' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Created:</td>
+                                        <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                </table>
+
+                            {% elif table_name == 'evidence' %}
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Evidence Type:</td>
+                                        <td>{{ record.evidence_type|title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Officer:</td>
+                                        <td>
+                                            <a href="{{ url_for('officer_detail', officer_id=record.officer_id) }}">
+                                                {{ record.officer.first_name }} {{ record.officer.last_name }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">File Name:</td>
+                                        <td>{{ record.file_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Description:</td>
+                                        <td>{{ record.description or 'N/A' }}</td>
+                                    </tr>
+                                    {% if record.uploader_name %}
+                                    <tr>
+                                        <td class="fw-bold">Uploader:</td>
+                                        <td>{{ record.uploader_name }} {% if record.uploader_email %}({{ record.uploader_email }}){% endif %}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="fw-bold">Source:</td>
+                                        <td>{{ record.source or 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Verified:</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if record.verified else 'warning' }}">
+                                                {{ 'Yes' if record.verified else 'No' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Created:</td>
+                                        <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                </table>
+                                <div class="mt-3">
+                                    <a href="{{ url_for('download_evidence', evidence_id=record.id) }}" class="btn btn-outline-primary" target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download Evidence File
+                                    </a>
+                                </div>
+
+                            {% elif table_name == 'community_reports' %}
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Report Type:</td>
+                                        <td>{{ record.report_type|title }}</td>
+                                    </tr>
+                                    {% if record.reporter_name %}
+                                    <tr>
+                                        <td class="fw-bold">Reporter:</td>
+                                        <td>
+                                            {{ record.reporter_name }}
+                                            {% if record.reporter_email %}<br>Email: {{ record.reporter_email }}{% endif %}
+                                            {% if record.reporter_phone %}<br>Phone: {{ record.reporter_phone }}{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if record.incident_date %}
+                                    <tr>
+                                        <td class="fw-bold">Incident Date:</td>
+                                        <td>{{ record.incident_date.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if record.location %}
+                                    <tr>
+                                        <td class="fw-bold">Location:</td>
+                                        <td>{{ record.location }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="fw-bold">Description:</td>
+                                        <td>{{ record.description }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Contact OK:</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if record.contact_ok else 'secondary' }}">
+                                                {{ 'Yes' if record.contact_ok else 'No' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Verified:</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if record.verified else 'warning' }}">
+                                                {{ 'Yes' if record.verified else 'No' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Submitted:</td>
+                                        <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                </table>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Moderation Actions -->
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Moderation Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <div class="d-grid">
+                                        <a href="{{ url_for('approve_record', table_name=table_name, record_id=record.id) }}" 
+                                           class="btn btn-success btn-lg"
+                                           onclick="return confirm('Are you sure you want to approve this record?');">
+                                            <i class="fas fa-check-circle me-2"></i>Approve
+                                        </a>
+                                    </div>
+                                    <p class="text-center mt-2 text-muted small">
+                                        Mark this record as verified and approved
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                            <i class="fas fa-times-circle me-2"></i>Reject
+                                        </button>
+                                    </div>
+                                    <p class="text-center mt-2 text-muted small">
+                                        Reject this record with a reason
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">Reject Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" method="GET" action="{{ url_for('reject_record', table_name=table_name, record_id=record.id) }}">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">Reason for Rejection</label>
+                        <select class="form-select" name="reason" id="rejectReason" required>
+                            <option value="">Select a reason...</option>
+                            <option value="insufficient_evidence">Insufficient Evidence</option>
+                            <option value="duplicate">Duplicate Entry</option>
+                            <option value="inappropriate">Inappropriate Content</option>
+                            <option value="false_information">False Information</option>
+                            <option value="spam">Spam</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will mark the record as rejected. The record will not be deleted but will be flagged as rejected.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="rejectForm" class="btn btn-danger">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -285,3 +285,33 @@ class Dispute(db.Model):
     
     def __repr__(self):
         return f'<Dispute {self.dispute_type} for {self.table_name}:{self.record_id}>'
+
+class Vehicle(db.Model):
+    __tablename__ = 'vehicles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    officer_id = db.Column(db.Integer, db.ForeignKey('officers.id'), nullable=False)
+    vehicle_type = db.Column(db.String(50))  # patrol, personal, unmarked, undercover, etc.
+    make = db.Column(db.String(50))  # Ford, Chevrolet, Dodge, etc.
+    model = db.Column(db.String(50))  # Explorer, Tahoe, Charger, etc.
+    year = db.Column(db.Integer)
+    color = db.Column(db.String(50))
+    license_plate = db.Column(db.String(20))
+    state = db.Column(db.String(2))  # State of registration
+    vin = db.Column(db.String(17))  # Vehicle Identification Number
+    is_unmarked = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text)  # Additional details, modifications, etc.
+    last_seen_location = db.Column(db.String(200))
+    last_seen_date = db.Column(db.Date)
+    photo_url = db.Column(db.String(500))
+    is_active = db.Column(db.Boolean, default=True)
+    verified = db.Column(db.Boolean, default=False)
+    source = db.Column(db.String(200))  # How this info was obtained
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    officer = db.relationship('Officer', backref='vehicles')
+    
+    def __repr__(self):
+        return f'<Vehicle {self.year} {self.make} {self.model} - {self.license_plate}>'

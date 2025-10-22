@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Add Vehicle - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-car me-2"></i>Add Vehicle</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.officer_id.label(class="form-label") }}
+                            {{ form.officer_id(class="form-select") }}
+                            {% if form.officer_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.officer_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.vehicle_type.label(class="form-label") }}
+                                {{ form.vehicle_type(class="form-select") }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    {{ form.is_unmarked(class="form-check-input") }}
+                                    {{ form.is_unmarked.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.make.label(class="form-label") }}
+                                {{ form.make(class="form-control", placeholder="e.g. Ford, Chevrolet") }}
+                                {% if form.make.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.make.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.model.label(class="form-label") }}
+                                {{ form.model(class="form-control", placeholder="e.g. Explorer, Tahoe") }}
+                                {% if form.model.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.model.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.year.label(class="form-label") }}
+                                {{ form.year(class="form-control", placeholder="2024") }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.color.label(class="form-label") }}
+                                {{ form.color(class="form-control", placeholder="e.g. Black, White") }}
+                                {% if form.color.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.color.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.license_plate.label(class="form-label") }}
+                                {{ form.license_plate(class="form-control", placeholder="ABC1234") }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                {{ form.state.label(class="form-label") }}
+                                {{ form.state(class="form-control", placeholder="CA", maxlength="2") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.vin.label(class="form-label") }}
+                            {{ form.vin(class="form-control", placeholder="17-character VIN", maxlength="17") }}
+                            <small class="form-text text-muted">Optional: Vehicle Identification Number</small>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="Any additional details, modifications, distinctive features...") }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.last_seen_location.label(class="form-label") }}
+                                {{ form.last_seen_location(class="form-control", placeholder="City, State or specific location") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.last_seen_date.label(class="form-label") }}
+                                {{ form.last_seen_date(class="form-control", type="date") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.source.label(class="form-label") }}
+                            {{ form.source(class="form-control", placeholder="How was this information obtained?") }}
+                            <small class="form-text text-muted">e.g., Public records, Community report, News article</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

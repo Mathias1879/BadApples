@@ -159,6 +159,37 @@
         </div>
     </div>
 
+    <!-- Export Data Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-download me-2"></i>Export Data</h3>
+                </div>
+                <div class="card-body">
+                    <p>Download complete datasets for community advocacy, research, or town hall meetings.</p>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('export_officers_csv') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-users me-2"></i>Export Officers (CSV)
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('export_incidents_csv') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Export Incidents (CSV)
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('export_vehicles_csv') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-car me-2"></i>Export Vehicles (CSV)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mission Statement -->
     <div class="row mt-5">
         <div class="col-12">

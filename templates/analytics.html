@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-chart-line me-2"></i>Analytics Dashboard</h1>
+            <p class="lead">Statistical insights and trends from the Bad Apples Database</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h2 class="card-title">{{ total_officers }}</h2>
+                    <p class="card-text">Total Officers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h2 class="card-title">{{ total_incidents }}</h2>
+                    <p class="card-text">Total Incidents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-3x mb-3"></i>
+                    <h2 class="card-title">${{ "%.2f"|format(total_costs / 1000000) }}M</h2>
+                    <p class="card-text">Taxpayer Costs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-car fa-3x mb-3"></i>
+                    <h2 class="card-title">{{ unmarked_vehicles }}/{{ total_vehicles }}</h2>
+                    <p class="card-text">Unmarked Vehicles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Officer Status Breakdown -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-user-tag me-2"></i>Officer Status Breakdown</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-success">Active</span></td>
+                                <td class="text-end"><strong>{{ active_officers }}</strong></td>
+                                <td class="text-end">{{ "%.1f"|format((active_officers / total_officers * 100) if total_officers > 0 else 0) }}%</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-danger">Terminated</span></td>
+                                <td class="text-end"><strong>{{ terminated_officers }}</strong></td>
+                                <td class="text-end">{{ "%.1f"|format((terminated_officers / total_officers * 100) if total_officers > 0 else 0) }}%</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-warning">Suspended</span></td>
+                                <td class="text-end"><strong>{{ suspended_officers }}</strong></td>
+                                <td class="text-end">{{ "%.1f"|format((suspended_officers / total_officers * 100) if total_officers > 0 else 0) }}%</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-secondary">Retired</span></td>
+                                <td class="text-end"><strong>{{ retired_officers }}</strong></td>
+                                <td class="text-end">{{ "%.1f"|format((retired_officers / total_officers * 100) if total_officers > 0 else 0) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Moderation Queue</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-exclamation-triangle text-danger me-2"></i>Pending Incidents</td>
+                                <td class="text-end"><strong>{{ pending_incidents }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-file-alt text-info me-2"></i>Pending Evidence</td>
+                                <td class="text-end"><strong>{{ pending_evidence }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-comment-dots text-warning me-2"></i>Pending Reports</td>
+                                <td class="text-end"><strong>{{ pending_reports }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-balance-scale text-primary me-2"></i>Pending Disputes</td>
+                                <td class="text-end"><strong>{{ pending_disputes }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Incident Types -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-list me-2"></i>Top Incident Types</h4>
+                </div>
+                <div class="card-body">
+                    {% if incident_types %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Incident Type</th>
+                                        <th>Count</th>
+                                        <th>Percentage</th>
+                                        <th>Visual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for type, count in incident_types %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><strong>{{ type }}</strong></td>
+                                        <td>{{ count }}</td>
+                                        <td>{{ "%.1f"|format((count / total_incidents * 100) if total_incidents > 0 else 0) }}%</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger" role="progressbar" 
+                                                     style="width: {{ (count / total_incidents * 100) if total_incidents > 0 else 0 }}%">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No incident data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Officers by Incidents -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-user-times me-2"></i>Top Officers by Incident Count</h4>
+                </div>
+                <div class="card-body">
+                    {% if top_officers %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Officer</th>
+                                        <th>Badge</th>
+                                        <th>Incidents</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for officer, count in top_officers %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <a href="{{ url_for('officer_detail', officer_id=officer.id) }}">
+                                                {{ officer.first_name }} {{ officer.last_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ officer.badge_number }}</td>
+                                        <td><span class="badge bg-danger">{{ count }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Officers by Taxpayer Cost -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Top Officers by Taxpayer Cost</h4>
+                </div>
+                <div class="card-body">
+                    {% if top_cost_officers %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Officer</th>
+                                        <th>Badge</th>
+                                        <th>Total Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for officer, cost in top_cost_officers %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <a href="{{ url_for('officer_detail', officer_id=officer.id) }}">
+                                                {{ officer.first_name }} {{ officer.last_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ officer.badge_number }}</td>
+                                        <td><span class="badge bg-warning">${{ "%.2f"|format(cost) }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No cost data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments with Most Incidents -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-building me-2"></i>Departments with Most Incidents</h4>
+                </div>
+                <div class="card-body">
+                    {% if department_stats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Department</th>
+                                        <th>Location</th>
+                                        <th>Incidents</th>
+                                        <th>Visual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dept, count in department_stats %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><strong>{{ dept.name }}</strong></td>
+                                        <td>{{ dept.location or 'N/A' }}</td>
+                                        <td>{{ count }}</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-warning" role="progressbar" 
+                                                     style="width: {{ (count / department_stats[0][1] * 100) if department_stats else 0 }}%">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No department data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Incident Trend -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-chart-area me-2"></i>Incident Trend (Last 12 Months)</h4>
+                </div>
+                <div class="card-body">
+                    {% if monthly_incidents %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Incidents</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for month, count in monthly_incidents %}
+                                    <tr>
+                                        <td>{{ month }}</td>
+                                        <td><strong>{{ count }}</strong></td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-info" role="progressbar" 
+                                                     style="width: {{ (count / (monthly_incidents|map(attribute='1')|max)) * 100 if monthly_incidents else 0 }}%">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No trend data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Export Complete Datasets</h5>
+                    <p class="text-muted">Download CSV files for further analysis</p>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('export_officers_csv') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>Officers CSV
+                        </a>
+                        <a href="{{ url_for('export_incidents_csv') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-download me-1"></i>Incidents CSV
+                        </a>
+                        <a href="{{ url_for('export_vehicles_csv') }}" class="btn btn-outline-info">
+                            <i class="fas fa-download me-1"></i>Vehicles CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

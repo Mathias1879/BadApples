@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicles - Bad Apples Database{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-car me-2"></i>Officer Vehicles</h1>
+            <p class="lead">Track vehicles associated with officers, including unmarked and personal vehicles.</p>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="GET" action="{{ url_for('vehicles') }}" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search by make, model, license plate, color, or officer name..." value="{{ search }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('add_vehicle') }}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>Add Vehicle
+            </a>
+        </div>
+    </div>
+
+    <!-- Vehicles List -->
+    {% if vehicles.items %}
+        <div class="row">
+            {% for vehicle in vehicles.items %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-car me-2"></i>
+                                {{ vehicle.year if vehicle.year else '' }} {{ vehicle.make }} {{ vehicle.model }}
+                            </h5>
+                            {% if vehicle.is_unmarked %}
+                                <span class="badge bg-danger">Unmarked</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ vehicle.vehicle_type|title }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Officer:</strong>
+                            <a href="{{ url_for('officer_detail', officer_id=vehicle.officer_id) }}">
+                                {{ vehicle.officer.first_name }} {{ vehicle.officer.last_name }}
+                                {% if vehicle.officer.badge_number %}({{ vehicle.officer.badge_number }}){% endif %}
+                            </a>
+                        </div>
+
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 40%;"><i class="fas fa-palette me-2"></i>Color:</td>
+                                <td><strong>{{ vehicle.color }}</strong></td>
+                            </tr>
+                            {% if vehicle.license_plate %}
+                            <tr>
+                                <td class="text-muted"><i class="fas fa-id-card me-2"></i>License Plate:</td>
+                                <td><strong>{{ vehicle.license_plate }}</strong> {% if vehicle.state %}({{ vehicle.state }}){% endif %}</td>
+                            </tr>
+                            {% endif %}
+                            {% if vehicle.last_seen_location %}
+                            <tr>
+                                <td class="text-muted"><i class="fas fa-map-marker-alt me-2"></i>Last Seen:</td>
+                                <td>{{ vehicle.last_seen_location }}
+                                    {% if vehicle.last_seen_date %}
+                                        <br><small class="text-muted">{{ vehicle.last_seen_date.strftime('%Y-%m-%d') }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+
+                        {% if vehicle.description %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ vehicle.description[:100] }}{% if vehicle.description|length > 100 %}...{% endif %}
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        {% if vehicle.verified %}
+                        <div class="mt-3">
+                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Verified</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-light">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>Added {{ vehicle.created_at.strftime('%Y-%m-%d') }}
+                            {% if vehicle.source %}
+                                | Source: {{ vehicle.source }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if vehicles.pages > 1 %}
+        <nav aria-label="Vehicle pagination">
+            <ul class="pagination justify-content-center">
+                {% if vehicles.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('vehicles', page=vehicles.prev_num, search=search) }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in vehicles.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == vehicles.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('vehicles', page=page_num, search=search) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if vehicles.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('vehicles', page=vehicles.next_num, search=search) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if search %}
+                No vehicles found matching "{{ search }}".
+            {% else %}
+                No vehicles have been added yet. <a href="{{ url_for('add_vehicle') }}" class="alert-link">Add the first vehicle</a>.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

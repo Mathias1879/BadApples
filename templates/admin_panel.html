@@ -106,9 +106,42 @@
                     <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
                     <h5 class="card-title">Analytics</h5>
                     <p class="card-text">View system analytics</p>
-                    <a href="#" class="btn btn-success">
+                    <a href="{{ url_for('analytics') }}" class="btn btn-success">
                         <i class="fas fa-chart-bar me-1"></i>Analytics
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management (Admin Only) -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-3">
+                <i class="fas fa-users-cog me-2"></i>User Management
+            </h3>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-shield fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Register Admin User</h5>
+                    <p class="card-text">Create new administrator or moderator accounts</p>
+                    <a href="{{ url_for('admin_register') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i>Register User
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Manage Users</h5>
+                    <p class="card-text">View and manage existing users</p>
+                    <button class="btn btn-info" onclick="alert('User management page coming soon')">
+                        <i class="fas fa-users me-1"></i>Manage Users
+                    </button>
                 </div>
             </div>
         </div>
