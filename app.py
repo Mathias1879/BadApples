@@ -511,7 +511,8 @@ def officer_detail(officer_id):
     evidence = officer.evidence.order_by(Evidence.created_at.desc()).all()
     social_media = officer.social_media.all()
     department_history = officer.department_history.order_by(OfficerDepartmentHistory.start_date.desc()).all()
-    vehicles = officer.vehicles.filter_by(is_active=True).all()
+    vehicles = [v for v in officer.vehicles if v.is_active]
+    total_cost, costs = calculate_total_costs(officer_id)
     
     return render_template('officer_detail.html', 
                          officer=officer, 
@@ -519,7 +520,9 @@ def officer_detail(officer_id):
                          evidence=evidence,
                          social_media=social_media,
                          department_history=department_history,
-                         vehicles=vehicles)
+                         vehicles=vehicles,
+                         total_cost=total_cost,
+                         costs=costs)
 
 @app.route('/add_officer', methods=['GET', 'POST'])
 def add_officer():
